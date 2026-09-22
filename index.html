@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Claim Investigation Case Manager</title>
+<style>
+:root{
+  --bg:#f7f7f5; --panel:#ffffff; --border:#e3e1db; --text:#2a2a28; --muted:#736f66;
+  --accent:#7a3b2e; --accent-light:#f1e4de; --ok:#3f7a4e; --no:#a13c3c; --pending:#a68b3c;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){--bg:#1b1a18;--panel:#232220;--border:#38352f;--text:#eae7e0;--muted:#a19b8e;--accent:#d98a6f;--accent-light:#332621;}
+}
+:root[data-theme="dark"]{--bg:#1b1a18;--panel:#232220;--border:#38352f;--text:#eae7e0;--muted:#a19b8e;--accent:#d98a6f;--accent-light:#332621;}
+*{box-sizing:border-box;}
+html,body{height:100%;}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Georgia,'Times New Roman',serif;padding-top:env(safe-area-inset-top,0);padding-bottom:env(safe-area-inset-bottom,0);}
+header{padding:20px 16px 8px;text-align:center;}
+h1{font-size:1.4rem;margin:0 0 4px;}
+header p{color:var(--muted);font-size:.85rem;margin:0;}
+nav{display:flex;gap:6px;overflow-x:auto;padding:10px 12px;border-bottom:1px solid var(--border);position:sticky;top:env(safe-area-inset-top,0);background:var(--bg);z-index:5;}
+nav button{flex:0 0 auto;background:none;border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:20px;font-size:.85rem;cursor:pointer;font-family:inherit;}
+nav button.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+main{max-width:900px;margin:0 auto;padding:16px;}
+.panel{display:none;}
+.panel.active{display:block;}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+@media(max-width:520px){.grid{grid-template-columns:1fr;}}
+label{display:block;font-size:.75rem;color:var(--muted);margin-bottom:3px;}
+input,select{width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-family:inherit;font-size:.9rem;margin-bottom:10px;}
+button.primary{background:var(--accent);color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;font-size:.9rem;font-family:inherit;}
+button.secondary{background:none;border:1px solid var(--accent);color:var(--accent);padding:8px 14px;border-radius:6px;cursor:pointer;font-size:.85rem;font-family:inherit;}
+table{width:100%;border-collapse:collapse;font-size:.82rem;}
+th,td{border:1px solid var(--border);padding:6px 8px;text-align:left;}
+th{background:var(--accent-light);}
+.table-wrap{overflow-x:auto;}
+select.status{padding:4px;font-size:.8rem;margin:0;}
+.status-Y{color:var(--ok);font-weight:bold;}
+.status-N{color:var(--no);font-weight:bold;}
+.status--{color:var(--muted);}
+.letter{white-space:pre-wrap;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:24px;line-height:1.7;font-size:.95rem;min-height:300px;}
+.actions{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap;}
+.muted{color:var(--muted);font-size:.8rem;}
+.case-pick{margin-bottom:12px;}
+.toggle-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;}
+.toggle-btn{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:6px;font-size:.78rem;cursor:pointer;font-family:inherit;}
+.toggle-btn span{font-weight:bold;margin-left:4px;}
+.toggle-btn span.status-Y{color:var(--ok);}
+.toggle-btn span.status-N{color:var(--no);}
+.toggle-btn span.status--{color:var(--muted);}
+h4{margin:0 0 6px;font-size:.9rem;}
+@media print{
+  nav,.no-print{display:none!important;}
+  .panel{display:none!important;}
+  .panel.print-active{display:block!important;}
+  body{background:#fff;color:#000;}
+  .letter{border:none;padding:0;}
+}
+</style>
+</head>
+<body>
+<header>
+<h1>Claim Investigation Case Manager</h1>
+<p>Case entry, document status tracking & letter generation</p>
+</header>
+<nav class="no-print">
+<button data-tab="entry" class="active">New Case</button>
+<button data-tab="list">Case List</button>
+<button data-tab="withdrawal">Withdrawal Letter</button>
+<button data-tab="fraud">Fraud Letter</button>
+<button data-tab="emp">Employee Info Form</button>
+<button data-tab="quest">Patient Questionnaire</button>
+</nav>
+<main>
+
+<section id="entry" class="panel active">
+<div class="card">
+<h3 style="margin-top:0">New / Edit Case</h3>
+<div class="grid">
+<div><label>TMC / Investigation No.</label><input id="f_tmc"></div>
+<div><label>Claim Number</label><input id="f_claim"></div>
+<div><label>Policy Number</label><input id="f_policy"></div>
+<div><label>Patient Name</label><input id="f_name"></div>
+<div><label>Patient Age</label><input id="f_age"></div>
+<div><label>Hospital Name</label><input id="f_hospital"></div>
+<div><label>IP No. (Hospital)</label><input id="f_ip"></div>
+<div><label>Date of Admission (DOA)</label><input id="f_doa" type="date"></div>
+<div><label>Date of Discharge (DOD)</label><input id="f_dod" type="date"></div>
+<div><label>Place</label><input id="f_place"></div>
+<div><label>Letter Date</label><input id="f_date" type="date"></div>
+<div><label>Investigator Name</label><input id="f_inv"></div>
+<div><label>Investigator Designation</label><input id="f_desig" value="Field Investigator"></div>
+<div><label>Investigator Mobile</label><input id="f_mobile"></div>
+<div><label>Claim Type</label><select id="f_claimtype" onchange="toggleVerificationFields()">
+<option value="Cashless">Cashless (Hospital part only)</option>
+<option value="Reimbursement">Reimbursement (Hospital + Patient)</option>
+<option value="PA">Personal Accident</option>
+<option value="Death">Death Claim</option>
+</select></div>
+</div>
+<h4 style="margin:4px 0 6px">Document / Part Collection</h4>
+<div class="toggle-row">
+<button type="button" class="toggle-btn" id="tb_hospitalPart" onclick="cycleFormToggle('hospitalPart')">Hospital Part: <span>-</span></button>
+<button type="button" class="toggle-btn" id="tb_patientPart" onclick="cycleFormToggle('patientPart')">Patient Part: <span>-</span></button>
+<button type="button" class="toggle-btn" id="tb_hospitalQuestionnaire" onclick="cycleFormToggle('hospitalQuestionnaire')">Hospital Questionnaire: <span>-</span></button>
+<button type="button" class="toggle-btn" id="tb_patientQuestionnaire" onclick="cycleFormToggle('patientQuestionnaire')">Patient Questionnaire: <span>-</span></button>
+</div>
+<div id="paVerificationRow" class="toggle-row" style="display:none">
+<button type="button" class="toggle-btn" id="tb_policeVerification" onclick="cycleFormToggle('policeVerification')">Police Station Verification: <span>-</span></button>
+<button type="button" class="toggle-btn" id="tb_nomineeVerification" onclick="cycleFormToggle('nomineeVerification')">Nominee Verification: <span>-</span></button>
+<button type="button" class="toggle-btn" id="tb_locationVerification" onclick="cycleFormToggle('locationVerification')">Location / Vicinity Verification: <span>-</span></button>
+</div>
+<p class="muted">Click a button to cycle its status: - → Y → N. Police/Nominee/Location verification only apply to Personal Accident and Death claims.</p>
+<div class="actions">
+<button class="primary" onclick="saveCase()">Save Case</button>
+<button class="secondary" onclick="clearForm()">Clear Form</button>
+</div>
+<p class="muted" id="saveMsg"></p>
+</div>
+</section>
+
+<section id="list" class="panel">
+<div class="card">
+<h3 style="margin-top:0">All Cases</h3>
+<div class="table-wrap">
+<table id="caseTable">
+<thead><tr><th>TMC No.</th><th>Patient</th><th>Hospital</th><th>Claim No.</th><th>Type</th><th>Hosp. Part</th><th>Pat. Part</th><th>Hosp. Quest.</th><th>Pat. Quest.</th><th>Police Verif.</th><th>Nominee Verif.</th><th>Location Verif.</th><th>Withdrawal Ltr</th><th>Fraud Ltr</th><th>Emp. Info</th><th>Actions</th></tr></thead>
+<tbody></tbody>
+</table>
+</div>
+<p class="muted">Status: Y = collected, N = not obtained, - = not applicable/pending</p>
+</div>
+</section>
+
+<section id="withdrawal" class="panel">
+<div class="card no-print">
+<label>Select Case</label>
+<select id="w_pick" class="case-pick" onchange="renderWithdrawal()"></select>
+<div class="actions">
+<button class="secondary" onclick="copyText('w_letter')">Copy Text</button>
+<button class="primary" onclick="printLetter('withdrawal')">Print / Save as PDF</button>
+</div>
+</div>
+<div class="letter" id="w_letter">Select a case above to generate the patient withdrawal letter.</div>
+</section>
+
+<section id="fraud" class="panel">
+<div class="card no-print">
+<label>Select Case</label>
+<select id="fr_pick" class="case-pick" onchange="renderFraud()"></select>
+<div class="actions">
+<button class="secondary" onclick="copyText('fr_letter')">Copy Text</button>
+<button class="primary" onclick="printLetter('fraud')">Print / Save as PDF</button>
+</div>
+</div>
+<div class="letter" id="fr_letter">Select a case above to generate the hospital fraud letter.</div>
+</section>
+
+<section id="emp" class="panel">
+<div class="card">
+<h3 style="margin-top:0">Employee Case Information Form</h3>
+<p class="muted">Original file, unedited — exactly as supplied.</p>
+<a class="primary" style="display:inline-block;text-decoration:none;padding:10px 16px;border-radius:6px;" download="Employee_Case_Information_Form.pdf" href="assets/employee_info_form.pdf">Download Original PDF</a>
+</div>
+</section>
+
+<section id="quest" class="panel">
+<div class="card">
+<h3 style="margin-top:0">Patient Questionnaire (Insured's Verification)</h3>
+<p class="muted">Original file, unedited — exactly as supplied.</p>
+<a class="primary" style="display:inline-block;text-decoration:none;padding:10px 16px;border-radius:6px;" download="Patient_Questionnaire_Insureds_Verification.pdf" href="assets/patient_questionnaire.pdf">Download Original PDF</a>
+</div>
+</section>
+
+</main>
+
+<script>
+let cases = [];
+try{ cases = JSON.parse(localStorage.getItem('claim_cases')||'[]'); }catch(e){ cases=[]; }
+let editId = null;
+const TOGGLE_FIELDS = ['hospitalPart','patientPart','hospitalQuestionnaire','patientQuestionnaire','policeVerification','nomineeVerification','locationVerification'];
+let formDraft = {};
+function resetFormDraft(){ formDraft = {}; TOGGLE_FIELDS.forEach(f=>{ formDraft[f]='-'; renderToggleBtn(f); }); document.getElementById('f_claimtype').value='Cashless'; toggleVerificationFields(); }
+function renderToggleBtn(field){
+  const span = document.querySelector('#tb_'+field+' span');
+  if(span){ span.textContent = formDraft[field]; span.className = 'status-'+formDraft[field]; }
+}
+function cycleFormToggle(field){
+  const order = {'-':'Y','Y':'N','N':'-'};
+  formDraft[field] = order[formDraft[field]||'-'];
+  renderToggleBtn(field);
+}
+function toggleVerificationFields(){
+  const t = document.getElementById('f_claimtype').value;
+  document.getElementById('paVerificationRow').style.display = (t==='PA'||t==='Death') ? 'flex' : 'none';
+}
+
+document.querySelectorAll('nav button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  document.getElementById(b.dataset.tab).classList.add('active');
+  if(b.dataset.tab==='list') renderList();
+  if(b.dataset.tab==='withdrawal') fillPicker('w_pick');
+  if(b.dataset.tab==='fraud') fillPicker('fr_pick');
+}));
+
+function persist(){ try{ localStorage.setItem('claim_cases', JSON.stringify(cases)); }catch(e){} }
+
+function saveCase(){
+  const c = {
+    id: editId || 'c'+Date.now(),
+    tmc: val('f_tmc'), claim: val('f_claim'), policy: val('f_policy'),
+    name: val('f_name'), age: val('f_age'), hospital: val('f_hospital'), ip: val('f_ip'),
+    doa: val('f_doa'), dod: val('f_dod'), place: val('f_place'), date: val('f_date'),
+    inv: val('f_inv'), desig: val('f_desig'), mobile: val('f_mobile'),
+    claimType: document.getElementById('f_claimtype').value,
+    withdrawalStatus: (cases.find(x=>x.id===editId)||{}).withdrawalStatus || '-',
+    fraudStatus: (cases.find(x=>x.id===editId)||{}).fraudStatus || '-',
+    empStatus: (cases.find(x=>x.id===editId)||{}).empStatus || '-'
+  };
+  TOGGLE_FIELDS.forEach(f=>{ c[f] = formDraft[f] || '-'; });
+  if(editId){ cases = cases.map(x=>x.id===editId?c:x); } else { cases.push(c); }
+  persist();
+  document.getElementById('saveMsg').textContent = 'Case saved: '+ (c.tmc||c.name||c.id);
+  clearForm();
+}
+function val(id){ return document.getElementById(id).value.trim(); }
+function clearForm(){
+  ['f_tmc','f_claim','f_policy','f_name','f_age','f_hospital','f_ip','f_doa','f_dod','f_place','f_date','f_inv','f_mobile'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f_desig').value='Field Investigator';
+  editId = null;
+  resetFormDraft();
+}
+function editCase(id){
+  const c = cases.find(x=>x.id===id); if(!c) return;
+  document.getElementById('f_tmc').value=c.tmc; document.getElementById('f_claim').value=c.claim;
+  document.getElementById('f_policy').value=c.policy; document.getElementById('f_name').value=c.name;
+  document.getElementById('f_age').value=c.age; document.getElementById('f_hospital').value=c.hospital;
+  document.getElementById('f_ip').value=c.ip; document.getElementById('f_doa').value=c.doa;
+  document.getElementById('f_dod').value=c.dod; document.getElementById('f_place').value=c.place;
+  document.getElementById('f_date').value=c.date; document.getElementById('f_inv').value=c.inv;
+  document.getElementById('f_desig').value=c.desig; document.getElementById('f_mobile').value=c.mobile;
+  document.getElementById('f_claimtype').value = c.claimType || 'Cashless';
+  TOGGLE_FIELDS.forEach(f=>{ formDraft[f] = c[f] || '-'; renderToggleBtn(f); });
+  toggleVerificationFields();
+  editId = id;
+  document.querySelector('nav button[data-tab="entry"]').click();
+}
+function deleteCase(id){
+  if(!confirm('Delete this case?')) return;
+  cases = cases.filter(x=>x.id!==id); persist(); renderList();
+}
+function cycleStatus(id, field){
+  const order = {'-':'Y','Y':'N','N':'-'};
+  const c = cases.find(x=>x.id===id); c[field] = order[c[field]||'-'];
+  persist(); renderList();
+}
+function renderList(){
+  const tb = document.querySelector('#caseTable tbody'); tb.innerHTML='';
+  cases.forEach(c=>{
+    const tr = document.createElement('tr');
+    const cell = (field)=>`<td><span class="status-${c[field]||'-'}" style="cursor:pointer" onclick="cycleStatus('${c.id}','${field}')">${c[field]||'-'}</span></td>`;
+    const isPA = c.claimType==='PA' || c.claimType==='Death';
+    tr.innerHTML = `<td>${esc(c.tmc)}</td><td>${esc(c.name)}</td><td>${esc(c.hospital)}</td><td>${esc(c.claim)}</td>
+    <td>${esc(c.claimType||'Cashless')}</td>
+    ${cell('hospitalPart')}${cell('patientPart')}${cell('hospitalQuestionnaire')}${cell('patientQuestionnaire')}
+    <td>${isPA?cell('policeVerification').replace('<td>','').replace('</td>',''):'<span class="muted">n/a</span>'}</td>
+    <td>${isPA?cell('nomineeVerification').replace('<td>','').replace('</td>',''):'<span class="muted">n/a</span>'}</td>
+    <td>${isPA?cell('locationVerification').replace('<td>','').replace('</td>',''):'<span class="muted">n/a</span>'}</td>
+    ${cell('withdrawalStatus')}${cell('fraudStatus')}${cell('empStatus')}
+    <td><button class="secondary" onclick="editCase('${c.id}')">Edit</button> <button class="secondary" onclick="deleteCase('${c.id}')">Del</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+function esc(s){ return (s||'').replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
+
+function fillPicker(selId){
+  const sel = document.getElementById(selId);
+  sel.innerHTML = '<option value="">-- choose case --</option>' +
+    cases.map(c=>`<option value="${c.id}">${esc(c.tmc||'')} - ${esc(c.name||'')}</option>`).join('');
+}
+function renderWithdrawal(){
+  const c = cases.find(x=>x.id===document.getElementById('w_pick').value);
+  const el = document.getElementById('w_letter');
+  if(!c){ el.textContent='Select a case above to generate the patient withdrawal letter.'; return; }
+  el.textContent =
+`Place: ${c.place||'_______________'}
+Date: ${c.date||'_______________'}
+
+Dear Sir/Madam,
+
+I, ${c.name||'_______________'}, holder of Policy Number ${c.policy||'_______________'}, hereby voluntarily withdraw my health insurance claim Number ${c.claim||'_______________'} submitted for treatment at ${c.hospital||'_______________'} Hospital on ${c.doa||'_______________'}.
+
+I acknowledge that certain details submitted in support of my claim were not accurate and may have constituted a misrepresentation of the facts. I regret this oversight and understand that it could be considered an intentional breach of the policy terms. In light of this, I formally request to withdraw my claim and agree that no further action be pursued.
+
+Kindly acknowledge receipt of this withdrawal and confirm the closure of the claim.
+
+Thank you for your understanding.
+
+Sincerely,
+${c.name||''}`;
+}
+function renderFraud(){
+  const c = cases.find(x=>x.id===document.getElementById('fr_pick').value);
+  const el = document.getElementById('fr_letter');
+  if(!c){ el.textContent='Select a case above to generate the hospital fraud letter.'; return; }
+  el.textContent =
+`TO WHOM SO EVER IT MAY CONCERN
+
+This is to certify after verifying our complete records that Mr ${c.name||'_______________'} aged ${c.age||'____'} was not admitted in our hospital with IP No: ${c.ip||'_______________'} DOA: ${c.doa||'_______________'} & DOD: ${c.dod||'_______________'}.
+
+The documents shown by your Field Officer Mr ${c.inv||'_______________'} were not issued by us.
+It is a fraud claim.
+Request you to consider this void and null and kindly cancel this claim.
+
+Yours Faithfully
+
+
+Mr ${c.inv||'_______________'}
+Designation: ${c.desig||'_______________'}
+Mobile Number: ${c.mobile||'_______________'}
+
+
+Hospital Stamp and Seal`;
+}
+function copyText(id){
+  navigator.clipboard.writeText(document.getElementById(id).textContent).then(()=>alert('Copied to clipboard'));
+}
+function printLetter(which){
+  const idMap = {withdrawal:'w_letter', fraud:'fr_letter'};
+  const el = document.getElementById(idMap[which]);
+  if(!el) return;
+  const text = el.textContent;
+  const w = window.open('', '_blank');
+  if(!w){ alert('Please allow pop-ups for this page, then click the button again to print or save as PDF.'); return; }
+  const escHtml = s => s.replace(/[&<>]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
+  w.document.write('<!DOCTYPE html><html><head><title>Letter</title><style>body{font-family:Georgia,\'Times New Roman\',serif;white-space:pre-wrap;line-height:1.7;padding:50px;font-size:15px;color:#000;}</style></head><body>'+escHtml(text)+'</body></html>');
+  w.document.close();
+  w.focus();
+  setTimeout(function(){ w.print(); }, 300);
+}
+renderList();
+resetFormDraft();
+</script>
+</body>
+</html>
